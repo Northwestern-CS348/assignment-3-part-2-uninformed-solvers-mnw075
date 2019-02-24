@@ -34,7 +34,16 @@ class TowerOfHanoiGame(GameMaster):
             A Tuple of Tuples that represent the game state
         """
         ### student code goes here
-        pass
+        retractable = None
+        assertable = None
+        game_state = [[],[],[]] 
+        
+        listOfBindings = self.kb.kb_ask(parse_input('fact: (on ?disk ?peg)')) # list of bindings
+        
+        for binding in listOfBindings:
+            game_state[int(binding['?peg'][3])-1].append(int(binding['?disk'][4]))
+        
+        return tuple(map(lambda x: tuple(sorted(x)),game_state))
 
     def makeMove(self, movable_statement):
         """
@@ -53,7 +62,34 @@ class TowerOfHanoiGame(GameMaster):
             None
         """
         ### Student code goes here
-        pass
+        sl = []
+        for i in movable_statement.terms:
+            sl.append(str(i))
+        r = [parse_input('fact: (veryTop ' + sl[0] + ' ' + sl[1] + ')')]
+        a = [parse_input('fact: (veryTop ' + sl[0] + ' ' + sl[2] + ')')]
+        
+        retractable = r
+        assertable = a
+        answer = self.kb.kb_ask(parse_input('fact: (veryTop ?disk ' + sl[2] + ')'))
+        if not answer: 
+            retractable.append(parse_input('fact: (isEmpty ' + sl[2] + ')'))
+            assertable.append(parse_input('fact: (onPeg ' + sl[0] + ' ' + sl[2] + ')'))
+        else:
+            retractable.append(parse_input('fact: (veryTop ' + answer[0]['?disk'] + ' '+ sl[2] + ')'))
+            assertable.append(parse_input('fact: (onDisk ' + sl[0] + ' ' + answer[0]['?disk'] + ')'))
+
+        answer = self.kb.kb_ask(parse_input('fact: (onDisk ' + sl[0] + ' ?disk)'))
+        if answer:
+            retractable.append(parse_input('fact: (onDisk ' + sl[0] + ' ' + answer[0]['?disk'] + ')'))
+            assertable.append(parse_input('fact: (veryTop ' + answer[0]['?disk'] + ' ' + sl[1] + ')'))
+        else:
+            retractable.append(parse_input('fact: (onPeg ' + sl[0] + ' ' + sl[1] + ')'))
+            assertable.append(parse_input('fact: (isEmpty ' + sl[1] + ')'))
+
+        for fact in retractable:
+            self.kb.kb_retract(fact)
+        for fact in assertable:
+            self.kb.kb_assert(fact)
 
     def reverseMove(self, movable_statement):
         """
@@ -100,7 +136,11 @@ class Puzzle8Game(GameMaster):
             A Tuple of Tuples that represent the game state
         """
         ### Student code goes here
-        pass
+        game_state = [[-1, -1, -1], [-1, -1, -1], [-1, -1, -1]]
+        listOfBindings = self.kb.kb_ask(parse_input('fact: (pos ?tile ?posx ?posy'))
+        for bindings in listOfBindings:
+            game_state[int(bindings['?posy'][3])-1][int(bindings['?posx'][3])-1] = int(bindings['?tile'][4])
+        return tuple(tuple(s) for s in game_state)
 
     def makeMove(self, movable_statement):
         """
@@ -111,7 +151,7 @@ class Puzzle8Game(GameMaster):
         The statement should come directly from the result of the MOVABLE query
         issued to the KB, in the following format:
         (movable tile3 pos1 pos3 pos2 pos3)
-
+g
         Args:
             movable_statement: A Statement object that contains one of the currently viable moves
 
@@ -119,7 +159,17 @@ class Puzzle8Game(GameMaster):
             None
         """
         ### Student code goes here
-        pass
+        sl = []
+        for i in movable_statement.terms:
+            sl.append(str(i))
+        r = [parse_input('fact: (pos ' + sl[0] + ' ' + sl[1] + ' ' + sl[2] + ')'), parse_input('fact: (empty ' + sl[3] + ' ' + sl[4] + ')')]
+        a = [parse_input('fact: (pos ' + sl[0] + ' ' + sl[3] + ' ' + sl[4] + ')'), parse_input('fact: (empty ' + sl[1] + ' ' + sl[2] + ')')]
+        retractable = r
+        assertable = a
+        for fact in retractable:
+            self.kb.kb_retract(fact)
+        for fact in assertable:
+            self.kb.kb_assert(fact)
 
     def reverseMove(self, movable_statement):
         """
